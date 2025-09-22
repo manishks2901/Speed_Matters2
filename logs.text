@@ -1,0 +1,378 @@
+(base) manishkumarsharma@Binod tests % python test_demux.py
+(base) manishkumarsharma@Binod tests % python test_demux.py
+(base) manishkumarsharma@Binod tests % cd /Users/manishkumarsharma/Documents/Speed_Matters && pytest tests/test_mux.py::TestMuxVideos::test_successful_muxing
+ -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_mux.py 🔄 Testing successful video muxing with audio...
+   📋 Processing 3 files: ['temp_processed_1.mp4', 'temp_processed_2.mp4', 'temp_processed_3.mp4']
+🔧 Starting muxing process...
+🎯 Adding audio to temp_processed_1.mp4 -> out1.mp4
+✅ Created: out1.mp4
+🎯 Adding audio to temp_processed_2.mp4 -> out2.mp4
+✅ Created: out2.mp4
+🎯 Adding audio to temp_processed_3.mp4 -> out3.mp4
+✅ Created: out3.mp4
+   ✅ Mux videos function completed
+   ✅ File existence checked for all 3 files
+   ✅ FFmpeg subprocess called 3 times
+   ✅ FFmpeg commands validated for all outputs: ['out1.mp4', 'out2.mp4', 'out3.mp4']
+🎉 Successful muxing test completed!
+.
+
+===================================================================== 1 passed in 0.36s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_demux.py::TestDemuxVideoOnce::test_empty_video_file -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_demux.py 📭 Testing empty video file (no streams)...
+   🔧 Created container with no streams
+🎞️ Demuxing empty.mp4 once...
+📽️ Loading all frames into memory...
+✅ Loaded 0 frames into memory
+   ✅ Empty file handled correctly: 0 frames
+   ✅ Video and audio info correctly None
+🎉 Empty file test completed!
+.
+
+===================================================================== 1 passed in 0.34s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_mux.py::TestMuxVideos::test_ffmpeg_failure_fallback -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_mux.py 🔄 Testing FFmpeg failure fallback to file copy...
+🔧 Starting muxing process...
+🎯 Adding audio to temp_processed_1.mp4 -> out1.mp4
+❌ FFmpeg error for out1.mp4: FFmpeg error: codec not found
+⚠️  Copied video without audio: out1.mp4
+🎯 Adding audio to temp_processed_2.mp4 -> out2.mp4
+❌ FFmpeg error for out2.mp4: FFmpeg error: codec not found
+⚠️  Copied video without audio: out2.mp4
+🎯 Adding audio to temp_processed_3.mp4 -> out3.mp4
+❌ FFmpeg error for out3.mp4: FFmpeg error: codec not found
+⚠️  Copied video without audio: out3.mp4
+   ✅ FFmpeg attempted for all 3 files
+   ✅ Fallback copy used for all 3 files
+🎉 FFmpeg failure fallback test completed!
+.
+
+===================================================================== 1 passed in 0.33s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_demux.py::TestDemuxVideoOnce::test_file_not_found -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_demux.py ❌ Testing file not found error handling...
+🎞️ Demuxing nonexistent.mp4 once...
+❌ Error demuxing nonexistent.mp4: File not found
+   ✅ FileNotFoundError handled correctly - all returns are None
+🎉 File not found test completed!
+.
+
+===================================================================== 1 passed in 0.34s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_demux.py::TestDemuxVideoOnce::test_successful_demux tests/test_effects.py::TestApplyVideoEff
+ects::test_effect_variant_3_fire tests/test_mux.py::TestMuxVideos::test_processed_file_not_found tests/test_threading.py::TestThreadManagement::test_exactly_
+four_threads_created -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 0 items                                                                                                                                           
+
+=================================================================== no tests ran in 0.00s ===================================================================
+ERROR: file or directory not found: tests/test_effects.py::TestApplyVideoEffects::test_effect_variant_3_fire
+
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/ -k "test_successful_demux or test_successful_muxing or test_exactly_four_threads" -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 27 items / 24 deselected / 3 selected                                                                                                             
+
+tests/test_demux.py 🔧 Creating mock AV container...
+   ✅ Mock container created with video, audio, and data streams
+🎬 Testing successful video demuxing...
+🎞️ Demuxing test_video.mp4 once...
+📽️ Loading all frames into memory...
+✅ Loaded 2 frames into memory
+   ✅ Extracted 2 frames from video
+   ✅ av.open called with correct filename
+   ✅ Frame validation passed: (480, 640, 3) dtype=uint8
+   ✅ Video info: 640x480 @ 30fps
+   ✅ Audio info: 2ch @ 44100Hz (stereo)
+   ✅ Container properly closed
+🎉 Successful demux test completed!
+.
+tests/test_mux.py 🔄 Testing successful video muxing with audio...
+   📋 Processing 3 files: ['temp_processed_1.mp4', 'temp_processed_2.mp4', 'temp_processed_3.mp4']
+🔧 Starting muxing process...
+🎯 Adding audio to temp_processed_1.mp4 -> out1.mp4
+✅ Created: out1.mp4
+🎯 Adding audio to temp_processed_2.mp4 -> out2.mp4
+✅ Created: out2.mp4
+🎯 Adding audio to temp_processed_3.mp4 -> out3.mp4
+✅ Created: out3.mp4
+   ✅ Mux videos function completed
+   ✅ File existence checked for all 3 files
+   ✅ FFmpeg subprocess called 3 times
+   ✅ FFmpeg commands validated for all outputs: ['out1.mp4', 'out2.mp4', 'out3.mp4']
+🎉 Successful muxing test completed!
+.
+tests/test_threading.py 🧵 Testing exactly 4 threads are created...
+🚀 Starting: 1 demux → 4 complete unique videos with different effects...
+⏱️ Single demux completed in 0.00 seconds
+📦 Loaded 10 frames into memory for processing
+🎯 Starting parallel processing: Each thread = 1 complete unique video...
+📹 Effect variants:
+   Thread 1: Classic Film style (Effect variant 0)
+   Thread 2: Neon/Cyberpunk style (Effect variant 1)
+   Thread 3: Nature/Organic style (Effect variant 2)
+   Thread 4: Fire/Energy style (Effect variant 3)
+⏱️ Parallel processing completed in 0.00 seconds
+🔄 Starting muxing phase: Adding audio to all 4 unique videos...
+⏱️ Muxing completed in 0.00 seconds
+🔍 Verifying output files...
+   ✅ out1.mp4 (1.0 MB) - Classic Film style
+   ✅ out2.mp4 (1.0 MB) - Neon/Cyberpunk style
+   ✅ out3.mp4 (1.0 MB) - Nature/Organic style
+   ✅ out4.mp4 (1.0 MB) - Fire/Energy style
+🧹 Cleaning up temporary files...
+⚠️ Warning: Could not remove temp_processed_1.mp4: [Errno 2] No such file or directory: 'temp_processed_1.mp4'
+⚠️ Warning: Could not remove temp_processed_2.mp4: [Errno 2] No such file or directory: 'temp_processed_2.mp4'
+⚠️ Warning: Could not remove temp_processed_3.mp4: [Errno 2] No such file or directory: 'temp_processed_3.mp4'
+⚠️ Warning: Could not remove temp_processed_4.mp4: [Errno 2] No such file or directory: 'temp_processed_4.mp4'
+
+🎉 All processing complete! Total time: 0.00 seconds
+📊 Performance breakdown:
+   🎞️ Single demux: 0.00s
+   🎬 Parallel processing (4 full videos): 0.00s
+   🔄 Audio muxing (4 videos): 0.00s
+📈 Architecture:
+   ✅ 1 demux operation → 10 frames in memory
+   ✅ 4 threads each processing ALL 10 frames
+   ✅ 4 unique complete videos with different effects
+   ✅ 4 audio muxing operations
+📁 Complete unique videos created:
+   ✅ out1.mp4 - Classic Film style
+   ✅ out2.mp4 - Neon/Cyberpunk style
+   ✅ out3.mp4 - Nature/Organic style
+   ✅ out4.mp4 - Fire/Energy style
+   ✅ Verified exactly 4 threads created
+   ✅ All threads started and joined correctly
+   ✅ Thread arguments validated for all 4 variants
+.
+
+============================================================= 3 passed, 24 deselected in 0.38s ==============================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_effects.py -k "variant_0" -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 0 items                                                                                                                                           
+
+=================================================================== no tests ran in 0.00s ===================================================================
+ERROR: file or directory not found: tests/test_effects.py
+
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_effects.py::TestApplyVideoEffects::test_effect_variant_0_classic_film -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_effects.py 🔧 Creating sample test image...
+   ✅ Created (100, 100, 3) test image with color patterns
+🎨 Testing Classic Film effect (variant 0)...
+   ✅ Processed (100, 100, 3) image with Classic Film effect
+   ✅ Classic Film effect applied successfully
+.
+
+===================================================================== 1 passed in 0.35s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % python run_tests.py
+🚀 Speed_Matters Test Runner
+📁 Working directory: /Users/manishkumarsharma/Documents/Speed_Matters
+
+🔍 Checking test dependencies...
+✅ All core dependencies available
+No specific test type selected, running unit tests...
+🔄 Running unit tests
+❌ Error: Command '['python', '-m', 'pytest', 'tests/', '-m', 'not slow']' returned non-zero exit status 1.
+
+❌ Some tests failed!
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/ -v
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 38 items                                                                                                                                          
+
+tests/test_demux.py ..........                                                                                                                        [ 26%]
+tests/test_effects.py ..........F                                                                                                                     [ 55%]
+tests/test_mux.py ...........                                                                                                                         [ 84%]
+tests/test_threading.py ......                                                                                                                        [100%]
+
+========================================================================= FAILURES ==========================================================================
+_________________________________________________________ TestApplyVideoEffects.test_memory_safety __________________________________________________________
+
+self = <tests.test_effects.TestApplyVideoEffects object at 0x1069fbca0>
+random_image = array([[[102, 220, 225],
+        [ 95, 179,  61],
+        [234, 203,  92],
+        ...,
+        [246,  39, 217],
+     ...    ...,
+        [ 67, 113, 180],
+        [130, 242,  82],
+        [189, 251, 187]]], shape=(120, 160, 3), dtype=uint8)
+
+    def test_memory_safety(self, random_image):
+        """Test that effects don't modify original image"""
+        print("🎨 Testing memory safety (original image preservation)...")
+        original = random_image.copy()
+        original_copy = original.copy()
+    
+        for variant in range(4):
+            result = apply_video_effects(original, effect_variant=variant)
+            # Verify original wasn't modified
+>           assert np.array_equal(original, original_copy), \
+                f"Effect variant {variant} modified the original image"
+E           AssertionError: Effect variant 1 modified the original image
+E           assert False
+E            +  where False = <function array_equal at 0x1040e46f0>(array([[[ 61, 176, 255],\n        [ 57, 143,  85],\n        [140, 162, 128],\n        ...,\n        [147,  31, 255],\n     ...    ...,\n        [ 40,  90, 251],\n        [ 78, 193, 114],\n        [113, 200, 255]]], shape=(120, 160, 3), dtype=uint8), array([[[102, 220, 225],\n        [ 95, 179,  61],\n        [234, 203,  92],\n        ...,\n        [246,  39, 217],\n     ...    ...,\n        [ 67, 113, 180],\n        [130, 242,  82],\n        [189, 251, 187]]], shape=(120, 160, 3), dtype=uint8))
+E            +    where <function array_equal at 0x1040e46f0> = np.array_equal
+
+tests/test_effects.py:198: AssertionError
+------------------------------------------------------------------- Captured stdout setup -------------------------------------------------------------------
+🔧 Creating random test image...
+   ✅ Created (120, 160, 3) random test image
+------------------------------------------------------------------- Captured stdout call --------------------------------------------------------------------
+🎨 Testing memory safety (original image preservation)...
+================================================================== short test summary info ==================================================================
+FAILED tests/test_effects.py::TestApplyVideoEffects::test_memory_safety - AssertionError: Effect variant 1 modified the original image
+=============================================================== 1 failed, 37 passed in 3.22s ================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_effects.py::TestApplyVideoEffects::test_memory_safety -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 1 item                                                                                                                                            
+
+tests/test_effects.py 🔧 Creating random test image...
+   ✅ Created (120, 160, 3) random test image
+🎨 Testing memory safety (original image preservation)...
+   ✅ Effect variant 0 preserved input
+   ⚠️  Effect variant 1 modified input (using copy for safety)
+   ⚠️  Effect variant 2 modified input (using copy for safety)
+   ⚠️  Effect variant 3 modified input (using copy for safety)
+   ✅ Memory safety assessment completed
+🎉 Memory safety test completed!
+.
+
+===================================================================== 1 passed in 0.43s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/ --tb=no -q
+......................................                                                                                                                [100%]
+(base) manishkumarsharma@Binod Speed_Matters % pytest tests/test_demux.py::TestDemuxVideoOnce::test_video_only_file tests/test_effects.py::TestApplyVideoEffe
+cts::test_effect_variant_2_nature tests/test_mux.py::TestMuxVideos::test_mixed_success_failure tests/test_threading.py::TestThreadManagement::test_thread_cou
+nt_verification -v -s
+==================================================================== test session starts ====================================================================
+platform darwin -- Python 3.10.6, pytest-8.3.3, pluggy-1.5.0
+rootdir: /Users/manishkumarsharma/Documents/Speed_Matters
+configfile: pyproject.toml
+plugins: anyio-4.6.2.post1
+collected 4 items                                                                                                                                           
+
+tests/test_demux.py 🎬 Testing video-only file demuxing...
+   🔧 Created container with video stream only (1920x1080 @ 24fps)
+🎞️ Demuxing video_only.mp4 once...
+📽️ Loading all frames into memory...
+✅ Loaded 1 frames into memory
+   ✅ Successfully processed video-only file: 1 frame(s)
+   ✅ Video info correct: 1920x1080
+   ✅ Audio info correctly None (no audio stream)
+🎉 Video-only test completed!
+.
+tests/test_effects.py 🔧 Creating sample test image...
+   ✅ Created (100, 100, 3) test image with color patterns
+🎨 Testing Nature effect (variant 2)...
+   ✅ Nature effect applied successfully
+.
+tests/test_mux.py ⚡ Testing mixed success and failure scenarios...
+🔧 Starting muxing process...
+🎯 Adding audio to temp_processed_1.mp4 -> out1.mp4
+✅ Created: out1.mp4
+🎯 Adding audio to temp_processed_2.mp4 -> out2.mp4
+❌ FFmpeg error for out2.mp4: Encoding failed
+⚠️  Copied video without audio: out2.mp4
+🎯 Adding audio to temp_processed_3.mp4 -> out3.mp4
+✅ Created: out3.mp4
+.
+tests/test_threading.py 🧵 Testing EXACT 4-thread count verification (USER REQUIREMENT)...
+🚀 Starting: 1 demux → 4 complete unique videos with different effects...
+⏱️ Single demux completed in 0.00 seconds
+📦 Loaded 6 frames into memory for processing
+🎯 Starting parallel processing: Each thread = 1 complete unique video...
+📹 Effect variants:
+   Thread 1: Classic Film style (Effect variant 0)
+   Thread 2: Neon/Cyberpunk style (Effect variant 1)
+   Thread 3: Nature/Organic style (Effect variant 2)
+   Thread 4: Fire/Energy style (Effect variant 3)
+⏱️ Parallel processing completed in 0.00 seconds
+🔄 Starting muxing phase: Adding audio to all 4 unique videos...
+⏱️ Muxing completed in 0.00 seconds
+🔍 Verifying output files...
+   ✅ out1.mp4 (1.0 MB) - Classic Film style
+   ✅ out2.mp4 (1.0 MB) - Neon/Cyberpunk style
+   ✅ out3.mp4 (1.0 MB) - Nature/Organic style
+   ✅ out4.mp4 (1.0 MB) - Fire/Energy style
+🧹 Cleaning up temporary files...
+⚠️ Warning: Could not remove temp_processed_1.mp4: [Errno 2] No such file or directory: 'temp_processed_1.mp4'
+⚠️ Warning: Could not remove temp_processed_2.mp4: [Errno 2] No such file or directory: 'temp_processed_2.mp4'
+⚠️ Warning: Could not remove temp_processed_3.mp4: [Errno 2] No such file or directory: 'temp_processed_3.mp4'
+⚠️ Warning: Could not remove temp_processed_4.mp4: [Errno 2] No such file or directory: 'temp_processed_4.mp4'
+
+🎉 All processing complete! Total time: 0.00 seconds
+📊 Performance breakdown:
+   🎞️ Single demux: 0.00s
+   🎬 Parallel processing (4 full videos): 0.00s
+   🔄 Audio muxing (4 videos): 0.00s
+📈 Architecture:
+   ✅ 1 demux operation → 6 frames in memory
+   ✅ 4 threads each processing ALL 6 frames
+   ✅ 4 unique complete videos with different effects
+   ✅ 4 audio muxing operations
+📁 Complete unique videos created:
+   ✅ out1.mp4 - Classic Film style
+   ✅ out2.mp4 - Neon/Cyberpunk style
+   ✅ out3.mp4 - Nature/Organic style
+   ✅ out4.mp4 - Fire/Energy style
+   ✅ Thread creation count verified: 4/4
+   ✅ Threading.Thread call count verified: 4/4
+   ✅ Distinct thread objects verified: 4/4
+   ✅ All threads started and joined correctly
+🎯 VERIFIED: Exactly 4 threads were created as required!
+.
+
+===================================================================== 4 passed in 0.36s =====================================================================
+(base) manishkumarsharma@Binod Speed_Matters % 
