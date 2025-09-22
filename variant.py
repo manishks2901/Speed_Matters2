@@ -432,10 +432,10 @@ def process_video(input_file, output_file, effect_variant, thread_id):
         out_container = av.open(output_file, mode='w')
         
         # Setup video stream for output
-        stream = out_container.add_stream('libx264', rate=30)
-        stream.width = 640
-        stream.height = 480
-        stream.pix_fmt = 'yuv420p'
+        video_stream = out_container.add_stream('libx264', rate=30)
+        video_stream.width = 640
+        video_stream.height = 480
+        video_stream.pix_fmt = 'yuv420p'
         
         frame_count = 0
         # Process frames
@@ -450,8 +450,7 @@ def process_video(input_file, output_file, effect_variant, thread_id):
             new_frame = av.VideoFrame.from_ndarray(img, format='rgb24')
             
             # Encode the frame
-            packet = stream.encode(new_frame)
-            if packet:
+            for packet in video_stream.encode(new_frame):
                 out_container.mux(packet)
             
             frame_count += 1
@@ -459,8 +458,7 @@ def process_video(input_file, output_file, effect_variant, thread_id):
                 print(f"📹 Thread {thread_id + 1}: Processed {frame_count} frames")
         
         # Flush the encoder
-        packet = stream.encode(None)
-        if packet:
+        for packet in video_stream.encode():
             out_container.mux(packet)
         
         # Close containers
@@ -473,22 +471,46 @@ def process_video(input_file, output_file, effect_variant, thread_id):
         print(f"❌ Thread {thread_id + 1}: Error processing {output_file}: {str(e)}")
 
 def mux_videos(processed_files, final_outputs):
-    """Mux processed videos into final output files"""
+    """Mux processed videos with original audio into final output files"""
     print("🔧 Starting muxing process...")
     
     import shutil
+    import subprocess
     
     for i, (processed_file, final_output) in enumerate(zip(processed_files, final_outputs)):
         try:
-            print(f"🎯 Copying {processed_file} -> {final_output}")
+            print(f"🎯 Adding audio to {processed_file} -> {final_output}")
             
-            # Simple file copy since videos are already properly processed
-            shutil.copy2(processed_file, final_output)
+            # Check if processed file exists
+            if not os.path.exists(processed_file):
+                print(f"❌ Processed file {processed_file} not found!")
+                continue
             
-            print(f"✅ Created: {final_output}")
+            # Use FFmpeg to combine processed video with original audio
+            cmd = [
+                'ffmpeg', '-y',  # -y to overwrite output files
+                '-i', processed_file,  # processed video (no audio)
+                '-i', 'test.mp4',      # original video with audio
+                '-c:v', 'copy',        # copy video stream from processed file
+                '-c:a', 'aac',         # encode audio to AAC
+                '-map', '0:v:0',       # use video from first input (processed)
+                '-map', '1:a:0',       # use audio from second input (original)
+                '-shortest',           # finish when shortest stream ends
+                final_output
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                print(f"✅ Created: {final_output}")
+            else:
+                print(f"❌ FFmpeg error for {final_output}: {result.stderr}")
+                # Fallback: just copy the processed file without audio
+                shutil.copy2(processed_file, final_output)
+                print(f"⚠️  Copied video without audio: {final_output}")
             
         except Exception as e:
-            print(f"❌ Error copying {processed_file}: {str(e)}")
+            print(f"❌ Error processing {processed_file}: {str(e)}")
 
 def main():
     """Main function to coordinate parallel video processing"""
@@ -500,15 +522,15 @@ def main():
         return
     
     # Define temporary processed files and final outputs
-    processed_files = ["temp_processed_1.mp4", "temp_processed_2.mp4"]
-    final_outputs = ["out1.mp4", "out2.mp4"]
+    processed_files = ["temp_processed_1.mp4", "temp_processed_2.mp4", "temp_processed_3.mp4", "temp_processed_4.mp4"]
+    final_outputs = ["out1.mp4", "out2.mp4", "out3.mp4", "out4.mp4"]
     
-    print("🚀 Starting parallel video processing with 2 threads...")
+    print("🚀 Starting parallel video processing with 4 threads...")
     start_time = time.time()
     
-    # Create and start 2 threads
+    # Create and start 4 threads
     threads = []
-    for i in range(2):
+    for i in range(4):
         thread = threading.Thread(
             target=process_video,
             args=(input_file, processed_files[i], i, i)
