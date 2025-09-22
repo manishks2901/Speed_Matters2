@@ -422,13 +422,60 @@ def apply_video_effects(img, effect_variant=0):
     
     return img.astype(np.uint8)
 
-def process_video(input_file, output_file, effect_variant, thread_id):
-    """Process a single video with specified effects"""
-    print(f"🎬 Thread {thread_id + 1}: Starting processing {input_file} -> {output_file}")
+def demux_video_once(input_file):
+    """Demux video once and store all frames and metadata in memory"""
+    print(f"🎞️ Demuxing {input_file} once...")
     
     try:
-        # Open input and output containers
-        in_container = av.open(input_file)
+        container = av.open(input_file)
+        
+        # Extract video frames and metadata
+        frames = []
+        video_info = None
+        audio_info = None
+        
+        # Get video stream info
+        for stream in container.streams:
+            if stream.type == 'video':
+                video_info = {
+                    'width': stream.width,
+                    'height': stream.height,
+                    'rate': stream.average_rate,
+                    'time_base': stream.time_base
+                }
+                break
+        
+        # Get audio stream info
+        for stream in container.streams:
+            if stream.type == 'audio':
+                audio_info = {
+                    'rate': stream.rate,
+                    'channels': stream.channels,
+                    'layout': stream.layout
+                }
+                break
+        
+        # Extract all video frames into memory
+        print("📽️ Loading all frames into memory...")
+        for frame in container.decode(video=0):
+            img = frame.to_ndarray(format='rgb24')
+            frames.append(img)
+        
+        container.close()
+        
+        print(f"✅ Loaded {len(frames)} frames into memory")
+        return frames, video_info, audio_info
+        
+    except Exception as e:
+        print(f"❌ Error demuxing {input_file}: {str(e)}")
+        return None, None, None
+
+def process_all_frames(all_frames, output_file, effect_variant, thread_id):
+    """Process ALL frames with a specific effect variant to create a complete unique video"""
+    print(f"🎬 Thread {thread_id + 1}: Processing ALL {len(all_frames)} frames with effect variant {effect_variant} -> {output_file}")
+    
+    try:
+        # Open output container
         out_container = av.open(output_file, mode='w')
         
         # Setup video stream for output
@@ -437,35 +484,32 @@ def process_video(input_file, output_file, effect_variant, thread_id):
         video_stream.height = 480
         video_stream.pix_fmt = 'yuv420p'
         
-        frame_count = 0
-        # Process frames
-        for frame in in_container.decode(video=0):
-            # Convert PyAV frame -> NumPy array
-            img = frame.to_ndarray(format='rgb24')
-            
-            # Apply effects based on variant
-            img = apply_video_effects(img, effect_variant)
+        processed_count = 0
+        
+        # Process ALL frames with the assigned effect variant
+        for img in all_frames:
+            # Apply the specific effect variant to create unique video
+            processed_img = apply_video_effects(img, effect_variant)
             
             # Convert back to PyAV frame
-            new_frame = av.VideoFrame.from_ndarray(img, format='rgb24')
+            new_frame = av.VideoFrame.from_ndarray(processed_img, format='rgb24')
             
             # Encode the frame
             for packet in video_stream.encode(new_frame):
                 out_container.mux(packet)
             
-            frame_count += 1
-            if frame_count % 30 == 0:  # Progress update every 30 frames
-                print(f"📹 Thread {thread_id + 1}: Processed {frame_count} frames")
+            processed_count += 1
+            if processed_count % 50 == 0:  # Progress update every 50 frames
+                print(f"📹 Thread {thread_id + 1} (Effect {effect_variant}): Processed {processed_count}/{len(all_frames)} frames")
         
         # Flush the encoder
         for packet in video_stream.encode():
             out_container.mux(packet)
         
-        # Close containers
-        in_container.close()
+        # Close container
         out_container.close()
         
-        print(f"✅ Thread {thread_id + 1}: Completed processing {output_file}")
+        print(f"✅ Thread {thread_id + 1}: Completed full video with effect variant {effect_variant} -> {output_file}")
         
     except Exception as e:
         print(f"❌ Thread {thread_id + 1}: Error processing {output_file}: {str(e)}")
@@ -513,7 +557,7 @@ def mux_videos(processed_files, final_outputs):
             print(f"❌ Error processing {processed_file}: {str(e)}")
 
 def main():
-    """Main function to coordinate parallel video processing"""
+    """Main function: 1 demux → 4 threads each processing ALL frames with different effects"""
     input_file = "test.mp4"
     
     # Check if input file exists
@@ -521,19 +565,40 @@ def main():
         print(f"❌ Error: Input file '{input_file}' not found!")
         return
     
-    # Define temporary processed files and final outputs
-    processed_files = ["temp_processed_1.mp4", "temp_processed_2.mp4", "temp_processed_3.mp4", "temp_processed_4.mp4"]
-    final_outputs = ["out1.mp4", "out2.mp4", "out3.mp4", "out4.mp4"]
-    
-    print("🚀 Starting parallel video processing with 4 threads...")
+    print("🚀 Starting: 1 demux → 4 complete unique videos with different effects...")
     start_time = time.time()
     
-    # Create and start 4 threads
+    # Step 1: Demux video once and load all frames into memory
+    demux_start = time.time()
+    all_frames, video_info, audio_info = demux_video_once(input_file)
+    
+    if all_frames is None:
+        print("❌ Failed to demux video!")
+        return
+    
+    demux_time = time.time() - demux_start
+    print(f"⏱️ Single demux completed in {demux_time:.2f} seconds")
+    print(f"📦 Loaded {len(all_frames)} frames into memory for processing")
+    
+    # Define output files for 4 unique effect variants
+    processed_files = ["temp_processed_1.mp4", "temp_processed_2.mp4", "temp_processed_3.mp4", "temp_processed_4.mp4"]
+    final_outputs = ["out1.mp4", "out2.mp4", "out3.mp4", "out4.mp4"]
+    effect_names = ["Classic Film", "Neon/Cyberpunk", "Nature/Organic", "Fire/Energy"]
+    
+    # Step 2: Each thread processes ALL frames with different effects
+    print("🎯 Starting parallel processing: Each thread = 1 complete unique video...")
+    print("📹 Effect variants:")
+    for i in range(4):
+        print(f"   Thread {i+1}: {effect_names[i]} style (Effect variant {i})")
+    
+    processing_start = time.time()
+    
+    # Create and start 4 threads - each processes ALL frames
     threads = []
     for i in range(4):
         thread = threading.Thread(
-            target=process_video,
-            args=(input_file, processed_files[i], i, i)
+            target=process_all_frames,
+            args=(all_frames, processed_files[i], i, i)  # Each thread gets ALL frames
         )
         threads.append(thread)
         thread.start()
@@ -542,24 +607,24 @@ def main():
     for thread in threads:
         thread.join()
     
-    processing_time = time.time() - start_time
-    print(f"⏱️  Parallel processing completed in {processing_time:.2f} seconds")
+    processing_time = time.time() - processing_start
+    print(f"⏱️ Parallel processing completed in {processing_time:.2f} seconds")
     
-    # Mux the processed videos into final outputs
-    print("🔄 Starting muxing phase...")
+    # Step 3: Mux each processed video with original audio
+    print("🔄 Starting muxing phase: Adding audio to all 4 unique videos...")
     mux_start_time = time.time()
     mux_videos(processed_files, final_outputs)
     mux_time = time.time() - mux_start_time
-    print(f"⏱️  Muxing completed in {mux_time:.2f} seconds")
+    print(f"⏱️ Muxing completed in {mux_time:.2f} seconds")
     
     # Verify output files were created
     print("🔍 Verifying output files...")
-    for output in final_outputs:
+    for i, output in enumerate(final_outputs):
         if os.path.exists(output):
             file_size = os.path.getsize(output) / (1024 * 1024)  # Size in MB
-            print(f"   ✅ {output} ({file_size:.1f} MB)")
+            print(f"   ✅ {output} ({file_size:.1f} MB) - {effect_names[i]} style")
         else:
-            print(f"   ❌ {output} (not found)")
+            print(f"   ❌ {output} (not found) - {effect_names[i]} style")
     
     # Clean up temporary files only if all outputs were created successfully
     all_outputs_exist = all(os.path.exists(output) for output in final_outputs)
@@ -569,20 +634,29 @@ def main():
             try:
                 if os.path.exists(temp_file):
                     os.remove(temp_file)
-                    print(f"🗑️  Removed: {temp_file}")
+                    print(f"🗑️ Removed: {temp_file}")
             except Exception as e:
-                print(f"⚠️  Warning: Could not remove {temp_file}: {str(e)}")
+                print(f"⚠️ Warning: Could not remove {temp_file}: {str(e)}")
     else:
-        print("⚠️  Keeping temporary files for debugging since some outputs failed")
+        print("⚠️ Keeping temporary files for debugging since some outputs failed")
     
     total_time = time.time() - start_time
     print(f"\n🎉 All processing complete! Total time: {total_time:.2f} seconds")
-    print("📁 Output files created:")
-    for output in final_outputs:
+    print(f"📊 Performance breakdown:")
+    print(f"   🎞️ Single demux: {demux_time:.2f}s")
+    print(f"   🎬 Parallel processing (4 full videos): {processing_time:.2f}s") 
+    print(f"   🔄 Audio muxing (4 videos): {mux_time:.2f}s")
+    print(f"📈 Architecture:")
+    print(f"   ✅ 1 demux operation → {len(all_frames)} frames in memory")
+    print(f"   ✅ 4 threads each processing ALL {len(all_frames)} frames")
+    print(f"   ✅ 4 unique complete videos with different effects")
+    print(f"   ✅ 4 audio muxing operations")
+    print("📁 Complete unique videos created:")
+    for i, output in enumerate(final_outputs):
         if os.path.exists(output):
-            print(f"   ✅ {output}")
+            print(f"   ✅ {output} - {effect_names[i]} style")
         else:
-            print(f"   ❌ {output} (failed)")
+            print(f"   ❌ {output} - {effect_names[i]} style (failed)")
 
 if __name__ == "__main__":
     main()
